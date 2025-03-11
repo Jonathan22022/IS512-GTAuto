@@ -1,3 +1,4 @@
 # IS512-GTAuto
-Jalanin:php artisan serve
-npm run dev
+Jalanin:
+1. php artisan serve
+2. npm run dev
