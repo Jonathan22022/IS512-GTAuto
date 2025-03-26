@@ -10,7 +10,9 @@ use Illuminate\Support\Str;
 use App\Models\Product;
 use App\Models\Job;
 use App\Models\User;
+use App\Models\Cart;
 use App\Models\TempatService;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\AdminController;
@@ -89,7 +91,42 @@ Route::get('/profile', function(){ return view('profile'); });
 Route::get('/setting', function(){ return view('settings'); });
 Route::get('/findMechanic', function(){ return view('FindMechanic'); });
 Route::get('/findMaintenanceCentre', function(){ return view('FindMaintenanceCentre'); });
-Route::get('/findPart', function(){ return view('FindPart'); });
+
+Route::get('/findPart', function(){ 
+    $users = DB::connection('mongodb')->getMongoDB()->selectCollection('users')
+        ->find(['role' => 'penjual'])
+        ->toArray();
+    return view('FindPart', compact('users')); 
+});
+
+Route::get('/detail-penjual', function (Request $request) {
+    $username = $request->query('username');
+    
+    // Find the user by username
+    $user = DB::connection('mongodb')->getMongoDB()->selectCollection('users')
+        ->findOne(['username' => $username]);
+    
+    if (!$user) {
+        return redirect('/findPart')->with('error', 'Penjual tidak ditemukan');
+    }
+    
+    // Get products for this seller
+    $products = DB::connection('mongodb')->getMongoDB()->selectCollection('products')
+        ->find(['user_id' => $user['_id']])
+        ->toArray();
+    
+    return view('detail-penjual', [
+        'username' => $username,
+        'alamat' => $user['alamat'],
+        'products' => $products
+    ]);
+});
+
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
+Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
+Route::patch('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
+Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
 
 Route::get('/admin', function () {
     if (!Session::has('user') || Session::get('user')['role'] !== 'admin') {
