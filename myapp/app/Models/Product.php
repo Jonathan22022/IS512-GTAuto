@@ -15,6 +15,7 @@ class Product extends Model
         'gambar',
         'price',
         'description',
+        'type',
         'user_id', // Foreign key ke User (Penjual)
     ];
 
@@ -23,6 +24,6 @@ class Product extends Model
      */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id', '_id');
     }
 }
