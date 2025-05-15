@@ -17,27 +17,32 @@ class AuthController extends Controller
 
     // Proses registrasi user ke MongoDB
     public function register(Request $request)
-    {
-        try {
-            $user = [
-                'username' => $request->input('username'),
-                'email' => $request->input('email'),
-                'password' => Hash::make($request->input('password')), // Hash password
-                'nomor_hp' => $request->input('nomor_hp'),
-                'alamat' => $request->input('alamat'),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+{
+    try {
+        $user = [
+            'username' => $request->input('username'),
+            'email' => $request->input('email'),
+            'password' => Hash::make($request->input('password')),
+            'nomor_hp' => $request->input('nomor_hp'),
+            'alamat' => $request->input('alamat'),
+            'role' => 'user',
+            'avatar' => 'default.jpeg',
+            'memberShip' => 'none',
+            'bidang' => 'default'//hanya terkhusus untuk 'role' => 'mekanik'
+            ,
+            'deskripsi' => 'default'//hanya terkhusus untuk 'role' => 'mekanik'
+            ,'created_at' => now(),
+            'updated_at' => now(),
+        ];
 
-            DB::connection('mongodb')->collection('users')->insert($user);
+        DB::connection('mongodb')->collection('users')->insert($user);
 
-            return redirect('/login')->with('success', 'Registrasi berhasil! Silakan login.');
-        } catch (\Exception $e) {
-            return redirect('/register')->with('error', 'Gagal registrasi: ' . $e->getMessage());
-        }
+        return redirect('/login')->with('success', 'Registrasi berhasil! Silakan login.');
+    } catch (\Exception $e) {
+        return redirect('/register')->with('error', 'Gagal registrasi: ' . $e->getMessage());
     }
+}
 
-    // Menampilkan halaman login
     public function showLogin()
     {
         return view('login');
@@ -50,7 +55,7 @@ class AuthController extends Controller
             ->where('email', $request->input('email'))->first();
 
         if ($user && Hash::check($request->input('password'), $user['password'])) {
-            Session::put('user', $user);
+            session(['user' => $user]);
             return redirect('/dashboard')->with('success', 'Login berhasil!');
         }
 
@@ -62,4 +67,27 @@ class AuthController extends Controller
         Session::forget('user');
         return redirect('/login')->with('success', 'Anda telah logout.');
     }
+    public function reverseGeocode(Request $request)
+{
+    $lat = $request->query('lat');
+    $lng = $request->query('lng');
+
+    try {
+        $apiKey = 'AIzaSyAL3riIbWFDS0nsoCN7VP69Jeg4NljCxn4';
+        $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";
+
+        $response = file_get_contents($url);
+        $data = json_decode($response, true);
+
+        if ($data['status'] == 'OK') {
+            $alamat = $data['results'][0]['formatted_address'];
+            return response()->json(['success' => true, 'alamat' => $alamat]);
+        } else {
+            return response()->json(['success' => false, 'message' => 'Gagal mendapatkan alamat.']);
+        }
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()]);
+    }
+}
+
 }
