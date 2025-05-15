@@ -11,19 +11,30 @@ use App\Models\Product;
 use App\Models\Job;
 use App\Models\User;
 use App\Models\Cart;
+use App\Models\EWallet;
+use App\Models\CreditCard;
 use App\Models\TempatService;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TempatServiceController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\OrderController;
 
 Route::get('/', function () {
     return view('a');
 });
-
+Route::get('/whyus', function () {
+    return view('b');
+});
 Route::get('/login', function () {
     return view('login');
+});
+
+Route::get('/register', function () {
+    return view('register');
 });
 
 Route::post('/register', function (Request $request) {
@@ -87,7 +98,7 @@ Route::get('/dashboard', function () {
     return view('dashboard');
 });
 
-Route::get('/profile', function(){ return view('profile'); });
+Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
 Route::get('/setting', function(){ return view('settings'); });
 Route::get('/findMechanic', function(){ return view('FindMechanic'); });
 Route::get('/findMaintenanceCentre', function(){ return view('FindMaintenanceCentre'); });
@@ -122,12 +133,69 @@ Route::get('/detail-penjual', function (Request $request) {
     ]);
 });
 
+// routes/web.php
+Route::post('/process-membership', function(Request $request) {
+    try {
+        $planType = $request->input('plan_type');
+        $userId = session('user')['_id'];
+        
+        // Determine membership type and duration
+        $membershipType = str_contains($planType, 'loyal') ? 'loyal' : 'plus';
+        $duration = str_contains($planType, 'monthly') ? 'monthly' : 'yearly';
+        
+        // Update user membership
+        DB::connection('mongodb')
+            ->collection('users')
+            ->where('_id', $userId)
+            ->update([
+                'memberShip' => $membershipType,
+                'membership_duration' => $duration,
+                'membership_expiry' => $duration === 'monthly' 
+                    ? now()->addMonth() 
+                    : now()->addYear()
+            ]);
+        
+        return redirect('/profile')->with('success', 'Pembelian membership berhasil!');
+    } catch (\Exception $e) {
+        return redirect('/Membership')->with('error', 'Gagal memproses membership: ' . $e->getMessage());
+    }
+})->name('process.membership');
+
+Route::get('/add-payment', function() { return view('add-payment'); })->name('add-payment');
+Route::get('/reverse-geocode', [AuthController::class, 'reverseGeocode']);
+Route::get('/Membership', function() {
+    if (!Session::has('user')) {
+        return view('Membership', ['payments' => []]);
+    }
+    
+    $userId = session('user')['_id'];
+    
+    $payments = DB::connection('mongodb')
+                ->table('payments')
+                ->where('user_id', $userId)
+                ->get()
+                ->toArray();
+    
+    return view('Membership', ['payments' => $payments]);
+})->name('Membership');
+Route::post('/payment/add', [PaymentController::class, 'addPayment'])->name('payment.add');
+Route::post('/payment/set-active', [PaymentController::class, 'setActive'])->name('payment.set-active');
+Route::post('/payment/delete', [PaymentController::class, 'deletePayment'])->name('payment.delete');
+Route::post('/payment/set-inactive', [PaymentController::class, 'setInactive'])->name('payment.set-inactive');
 Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
 Route::get('/cart/count', [CartController::class, 'getCartCount'])->name('cart.count');
 Route::patch('/cart/{id}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/{id}', [CartController::class, 'destroy'])->name('cart.destroy');
-
+Route::post('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
+Route::post('/checkout/process', [CartController::class, 'processCheckout'])->name('checkout.process');
+Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+Route::get('/orders/count', [OrderController::class, 'getCartCount'])->name('cart.count');
+Route::patch('/orders/{id}', [OrderController::class, 'update'])->name('orders.update');
+Route::delete('/orders/{id}', [OrderController::class, 'destroy'])->name('orders.destroy');
+Route::post('/orders/clear', [OrderController::class, 'clear'])->name('orders.clear');
 Route::get('/admin', function () {
     if (!Session::has('user') || Session::get('user')['role'] !== 'admin') {
         return redirect('/login')->with('error', 'Akses ditolak!');
