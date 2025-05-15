@@ -97,7 +97,8 @@ public function update(Request $request, $id)
         'jumlahBarang' => 'required|integer|min:1',
         'price' => 'required|numeric|min:0',
         'description' => 'required|string',
-        'type' => 'required|in:Engine,Intake,Forced induction,Exhaust,Drivetrain,Handling',
+        'type' => 'required|in:Engine,Intake,Forced induction,Exhaust,Drivetrain,Handling, Bodykits, Wheels, Livery and Wraps, Aerodynamics, Racing Gear',
+        
         'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
     ]);
 
