@@ -25,16 +25,16 @@
         <form action="{{ url('/register') }}" method="POST">
             @csrf
             <label class="block mb-2">Username:</label>
-            <input type="text" name="username" class="w-full border px-3 py-2 rounded mb-4" required>
+            <input type="text" name="username" class="w-full border text-black px-3 py-2 rounded mb-4" required>
 
             <label class="block mb-2">Email:</label>
-            <input type="email" name="email" class="w-full border px-3 py-2 rounded mb-4" required>
+            <input type="email" name="email" class="w-full border text-black px-3 py-2 rounded mb-4" required>
 
             <label class="block mb-2">Password:</label>
-            <input type="password" name="password" class="w-full border px-3 py-2 rounded mb-4" required>
+            <input type="password" name="password" class="w-full border text-black px-3 py-2 rounded mb-4" required>
 
             <label class="block mb-2">Nomor HP:</label>
-            <input type="text" name="nomor_hp" class="w-full border px-3 py-2 rounded mb-4" required>
+            <input type="text" name="nomor_hp" class="w-full border text-black px-3 py-2 rounded mb-4" required>
             
             <input type="hidden" name="alamat" id="alamat">
             <button type="submit" class="w-full bg-orange-600 text-white py-2 rounded hover:bg-orange-700">Register</button>
